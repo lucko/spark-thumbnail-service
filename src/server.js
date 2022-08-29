@@ -2,8 +2,10 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import puppeteer from "puppeteer";
+import NodeCache from "node-cache";
 
 async function getThumbnailImage(browser, code) {
+  console.log('Starting generation for ' + code);
   const page = await browser.newPage();
 
   page.setViewport({ width: 1200, height: 600 });
@@ -40,6 +42,7 @@ async function getThumbnailImage(browser, code) {
     screenshotBuffer = await page.screenshot({ type: "png" });
   }
 
+  console.log('Completed generation for ' + code);
   await page.close();
   return screenshotBuffer;
 }
@@ -57,6 +60,8 @@ async function main() {
   app.disable("x-powered-by");
   app.enable("trust proxy");
 
+  const cache = new NodeCache({ stdTTL: 300, useClones: false });
+
   app.get("/:code", async (req, res) => {
     let code = req.params.code;
 
@@ -65,13 +70,18 @@ async function main() {
       return;
     }
 
-    if (code.endsWith('.png')) {
+    if (code.endsWith(".png")) {
       code = code.slice(0, -4);
     }
 
     let thumbnail;
     try {
-      thumbnail = await getThumbnailImage(browser, code);
+      const promise = cache.get(code);
+      if (promise == undefined) {
+        promise = getThumbnailImage(browser, code);
+        cache.set(code, promise);
+      }
+      thumbnail = await promise;
     } catch (e) {
       console.error(e);
     }
