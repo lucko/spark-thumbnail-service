@@ -1,0 +1,15 @@
+{
+  "name": "spark-thumbnail-service",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/server.js",
+  "type": "module",
+  "author": "lucko",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.1",
+    "morgan": "^1.10.0",
+    "puppeteer": "^17.0.0"
+  }
+}
