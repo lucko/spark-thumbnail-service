@@ -71,7 +71,7 @@ async function main() {
 
     let thumbnail;
     try {
-      thumbnail = await getThumbnailImage(browser, req.params.code);
+      thumbnail = await getThumbnailImage(browser, code);
     } catch (e) {
       console.error(e);
     }
