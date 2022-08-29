@@ -76,7 +76,7 @@ async function main() {
 
     let thumbnail;
     try {
-      const promise = cache.get(code);
+      let promise = cache.get(code);
       if (promise == undefined) {
         promise = getThumbnailImage(browser, code);
         cache.set(code, promise);
