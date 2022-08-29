@@ -58,9 +58,15 @@ async function main() {
   app.enable("trust proxy");
 
   app.get("/:code", async (req, res) => {
-    if (req.params.code === "favicon.ico") {
+    let code = req.params.code;
+
+    if (code === "favicon.ico") {
       res.status(404);
       return;
+    }
+
+    if (code.endsWith('.png')) {
+      code = code.slice(0, -4);
     }
 
     let thumbnail;
