@@ -3,9 +3,15 @@ import cors from "cors";
 import morgan from "morgan";
 import puppeteer from "puppeteer";
 import NodeCache from "node-cache";
+import fs from "fs";
 
 async function getThumbnailImage(browser, code) {
-  console.log('Starting generation for ' + code);
+  if (fs.existsSync("cache/" + code)) {
+    return code;
+  }
+
+  console.log("GEN " + code + " (start)");
+  const startTime = Date.now();
   const page = await browser.newPage();
 
   page.setViewport({ width: 1200, height: 600 });
@@ -16,8 +22,6 @@ async function getThumbnailImage(browser, code) {
   // wait for react to render the thumbnail or a loading error
   await page.waitForSelector(".thumbnail, .loading-error");
   const success = await page.$(".thumbnail");
-
-  let screenshotBuffer;
 
   if (success) {
     // wait until all images and fonts have loaded
@@ -39,20 +43,27 @@ async function getThumbnailImage(browser, code) {
       ]);
     });
 
-    screenshotBuffer = await page.screenshot({ type: "png" });
+    await page.screenshot({ type: "png", path: `cache/${code}` });
   }
 
-  console.log('Completed generation for ' + code);
-  await page.close();
-  return screenshotBuffer;
+  console.log(`GEN ${code} (complete after ${Date.now() - startTime}ms)`);
+  return code;
 }
 
 async function main() {
   console.log("starting puppeteer....");
-  const browser = await puppeteer.launch({
-    executablePath: "/usr/bin/chromium-browser",
-    args: ["--no-sandbox"],
-  });
+  const browser = await puppeteer.launch(
+    process.env.NODE_ENV === "production"
+      ? {
+          executablePath: "/usr/bin/chromium-browser",
+          args: ["--no-sandbox"],
+        }
+      : {}
+  );
+
+  if (!fs.existsSync("cache")) {
+    fs.mkdirSync("cache");
+  }
 
   const app = express();
   app.use(morgan("dev"));
@@ -90,7 +101,7 @@ async function main() {
       res
         .contentType("png")
         .setHeader("Cache-Control", "public, max-age=86400")
-        .send(thumbnail);
+        .sendFile(thumbnail, { root: "cache" });
     } else {
       res.status(400).send("error");
     }
