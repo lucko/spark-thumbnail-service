@@ -18,7 +18,29 @@ async function getThumbnailImage(browser, code) {
     page.setViewport({ width: 1200, height: 600 });
     page.setDefaultTimeout(5000);
 
-    await page.goto(`http://spark.lucko.me/${code}?x-render-thumbnail=true`);
+    if (process.env.DEBUG) {
+      page
+        .on("console", (message) =>
+          console.log(
+            `${message.type().substr(0, 3).toUpperCase()} ${message.text()}`
+          )
+        )
+        .on("pageerror", ({ message }) => console.log(message))
+        .on("response", (response) =>
+          console.log(`${response.status()} ${response.url()}`)
+        );
+    }
+
+    let extraArgs = "?x-render-thumbnail=true";
+    if (process.env.BYTEBIN_URL) {
+      extraArgs +=
+        "&x-bytebin-url=" + encodeURIComponent(process.env.BYTEBIN_URL);
+    }
+
+    let sparkUrl = process.env.SPARK_URL || "https://spark.lucko.me/";
+
+    const url = sparkUrl + code + extraArgs;
+    await page.goto(url);
 
     // wait for react to render the thumbnail or a loading error
     await page.waitForSelector(".thumbnail, .loading-error");
