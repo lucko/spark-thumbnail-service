@@ -31,7 +31,7 @@ async function getThumbnailImage(browser, code) {
         );
     }
 
-    let extraArgs = "?x-render-thumbnail=true";
+    let extraArgs = "";
     if (process.env.BYTEBIN_URL) {
       extraArgs +=
         "&x-bytebin-url=" + encodeURIComponent(process.env.BYTEBIN_URL);
@@ -39,7 +39,7 @@ async function getThumbnailImage(browser, code) {
 
     let sparkUrl = process.env.SPARK_URL || "https://spark.lucko.me/";
 
-    const url = sparkUrl + code + extraArgs;
+    const url = `${sparkUrl}x-render-thumbnail?code=${code}${extraArgs}`;
     await page.goto(url);
 
     // wait for react to render the thumbnail or a loading error
