@@ -46,29 +46,31 @@ async function getThumbnailImage(browser, code) {
     await page.waitForSelector(".thumbnail, .loading-error");
     const success = await page.$(".thumbnail");
 
-    if (success) {
-      // wait until all images and fonts have loaded
-      // ty github - https://github.blog/2021-06-22-framework-building-open-graph-images/
-      await page.evaluate(async () => {
-        const selectors = Array.from(document.querySelectorAll("img"));
-        await Promise.all([
-          document.fonts.ready,
-          ...selectors.map((img) => {
-            if (img.complete) {
-              if (img.naturalHeight !== 0) return;
-              throw new Error("Image failed to load");
-            }
-            return new Promise((resolve, reject) => {
-              img.addEventListener("load", resolve);
-              img.addEventListener("error", reject);
-            });
-          }),
-        ]);
-      });
-
-      await page.screenshot({ type: "png", path: `cache/${code}` });
+    if (!success) {
+      console.log(`GEN ${code} (loading error after ${Date.now() - startTime}ms)`);
+      return null;
     }
 
+    // wait until all images and fonts have loaded
+    // ty github - https://github.blog/2021-06-22-framework-building-open-graph-images/
+    await page.evaluate(async () => {
+      const selectors = Array.from(document.querySelectorAll("img"));
+      await Promise.all([
+        document.fonts.ready,
+        ...selectors.map((img) => {
+          if (img.complete) {
+            if (img.naturalHeight !== 0) return;
+            throw new Error("Image failed to load");
+          }
+          return new Promise((resolve, reject) => {
+            img.addEventListener("load", resolve);
+            img.addEventListener("error", reject);
+          });
+        }),
+      ]);
+    });
+
+    await page.screenshot({ type: "png", path: `cache/${code}` });
     console.log(`GEN ${code} (complete after ${Date.now() - startTime}ms)`);
     return code;
   } finally {
